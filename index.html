@@ -1,0 +1,17 @@
+<!-- 采集页（A手机，拍照上传） -->
+<input placeholder="填写房间ID" id="roomid">
+<button onclick="start()">生成/房间ID发给你给你链接的人</button>
+<video id="v" autoplay></video>
+<canvas id="c"></canvas>
+<script>
+let room;
+async function start(){
+  room = document.getElementById('roomid').value
+  // 拉起相机
+  let stream = await navigator.mediaDevices.getUserMedia({video:true})
+  v.srcObject=stream
+}
+function takePhoto(){
+  // 拍照转base64，上传，带上room作为标识
+}
+</script>
